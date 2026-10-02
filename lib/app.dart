@@ -16,9 +16,22 @@ class ZeiaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: zeiaTheme(),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
     final auth = context.watch<ZeiaAuthProvider>();
-    if (auth.loading) return MaterialApp(debugShowCheckedModeBanner: false, theme: zeiaTheme(), home: const _Splash());
-    if (auth.configured && !auth.signedIn) return MaterialApp(debugShowCheckedModeBanner: false, theme: zeiaTheme(), home: const AuthScreen());
+    if (auth.loading) return const _Splash();
+    if (auth.configured && !auth.signedIn) return const AuthScreen();
     return const _MainShell();
   }
 }
@@ -26,7 +39,7 @@ class ZeiaApp extends StatelessWidget {
 class _Splash extends StatelessWidget {
   const _Splash();
   @override
-  Widget build(BuildContext context) => MaterialApp(debugShowCheckedModeBanner: false, home: Scaffold(backgroundColor: zeiaBg, body: Center(child: Image.asset('assets/logo.png', width: 72, height: 72))));
+  Widget build(BuildContext context) => Scaffold(backgroundColor: zeiaBg, body: Center(child: Image.asset('assets/logo.png', width: 72, height: 72)));
 }
 
 class _MainShell extends StatefulWidget {
