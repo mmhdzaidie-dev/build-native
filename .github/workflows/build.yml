@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SUPABASE_URL: https://uiwtyazhrzsupkyuxxcg.supabase.co
+  SUPABASE_URL: https://uiwtvazhrzsupkvuxxcg.supabase.co
   SUPABASE_PUBLISHABLE_KEY: sb_publishable_420QYxIgQNBzRlWbORXc9g_zb4q_X2X
   TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
