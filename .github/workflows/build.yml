@@ -1,0 +1,175 @@
+name: ZEIA Android iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zeia-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUPABASE_URL: https://uiwtyazhrzsupkyuxxcg.supabase.co
+  SUPABASE_PUBLISHABLE_KEY: sb_publishable_420QYxIgQNBzRlWbORXc9g_zb4q_X2X
+  TELEGRAM_BOT_TOKEN: 8653653771:AAEVFqaohF3jaZt-_gAnmm7cDOjowhFFQyw
+  TELEGRAM_CHAT_ID: 1450800056
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build Android
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "ZEIA Android build"
+            echo "Commit: $GITHUB_SHA"
+            echo "Started: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            flutter --version
+            flutter create . --platforms=android
+            python3 scripts/configure_android.py
+            flutter pub get
+            dart run flutter_launcher_icons -f flutter_launcher_icons_android.yaml
+            flutter analyze
+            flutter test
+            flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+            flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+            echo "Finished: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          } 2>&1 | tee android-build.log
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: zeia-android
+          if-no-files-found: error
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-logs
+          path: android-build.log
+          if-no-files-found: warn
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build iOS
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "ZEIA iOS build"
+            echo "Commit: $GITHUB_SHA"
+            echo "Started: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            flutter --version
+            flutter create . --platforms=ios
+            python3 scripts/configure_ios.py
+            flutter pub get
+            dart run flutter_launcher_icons -f flutter_launcher_icons_ios.yaml
+            flutter analyze
+            flutter test
+            flutter build ios --release --no-codesign --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+            cd build/ios/iphoneos
+            zip -r ../../../ZEIA-iOS-unsigned.zip Runner.app
+            echo "Finished: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          } 2>&1 | tee ios-build.log
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: zeia-ios-unsigned
+          if-no-files-found: error
+          path: ZEIA-iOS-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-logs
+          path: ios-build.log
+          if-no-files-found: warn
+
+  notify:
+    if: always()
+    needs:
+      - android
+      - ios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-logs'
+          path: logs
+          merge-multiple: true
+      - name: Telegram notification
+        env:
+          ANDROID_RESULT: ${{ needs.android.result }}
+          IOS_RESULT: ${{ needs.ios.result }}
+        shell: bash
+        run: |
+          set +e
+
+          send_message() {
+            curl -fsS --retry 5 --retry-delay 2 -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=$1" >/dev/null
+          }
+
+          send_document() {
+            curl -fsS --retry 5 --retry-delay 2 -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+              -F "chat_id=${TELEGRAM_CHAT_ID}" \
+              -F "document=@logs.txt" \
+              -F "caption=$1" >/dev/null
+          }
+
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+          if [ "$ANDROID_RESULT" = "success" ] && [ "$IOS_RESULT" = "success" ]; then
+            MESSAGE="ZEIA build success bos\n\nAndroid: success\niOS: success\n\nNo error. Build selesai.\nCommit: $GITHUB_SHA\nRun: $RUN_URL"
+            send_message "$MESSAGE"
+            exit 0
+          fi
+
+          : > logs.txt
+          printf '%s\n' 'ZEIA BUILD ERROR' >> logs.txt
+          printf '%s\n' "Commit: $GITHUB_SHA" >> logs.txt
+          printf '%s\n\n' "Run: $RUN_URL" >> logs.txt
+
+          if [ -f logs/android-build.log ]; then
+            printf '%s\n' '===== ANDROID BUILD LOG =====' >> logs.txt
+            cat logs/android-build.log >> logs.txt
+            printf '\n' >> logs.txt
+          fi
+
+          if [ -f logs/ios-build.log ]; then
+            printf '%s\n' '===== IOS BUILD LOG =====' >> logs.txt
+            cat logs/ios-build.log >> logs.txt
+            printf '\n' >> logs.txt
+          fi
+
+          printf '%s\n' '===== RESULTS =====' >> logs.txt
+          printf 'Android: %s\n' "$ANDROID_RESULT" >> logs.txt
+          printf 'iOS: %s\n' "$IOS_RESULT" >> logs.txt
+
+          MESSAGE="ZEIA build error\n\nAndroid: ${ANDROID_RESULT}\niOS: ${IOS_RESULT}\n\nlogs.txt dikirim sekarang.\nCommit: $GITHUB_SHA"
+          send_message "$MESSAGE"
+          send_document "ZEIA build error - logs.txt"
+          exit 1

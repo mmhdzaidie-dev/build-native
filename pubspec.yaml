@@ -1,0 +1,33 @@
+name: zeia
+description: ZEIA native Flutter music player
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.5.0
+  provider: ^6.1.5
+  just_audio: ^0.10.6
+  audio_service: ^0.18.19
+  audio_session: ^0.2.4
+  shared_preferences: ^2.5.3
+  cached_network_image: ^3.4.1
+  pointycastle: ^4.0.0
+  permission_handler: ^13.0.2
+  image_picker: ^1.2.3
+  path_provider: ^2.1.5
+  supabase_flutter: ^2.15.4
+  storage_client: ^2.8.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+flutter:
+  uses-material-design: true
+  assets:
+  - assets/logo.png
+  - assets/banner.png
