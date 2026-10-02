@@ -98,7 +98,7 @@ class ZeiaAuthProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await SupabaseService.client.auth.verifyOTP(type: OtpType.signup, token: token.trim(), email: mail);
+      final response = await SupabaseService.client.auth.verifyOTP(type: OtpType.email, token: token.trim(), email: mail);
       session = response.session;
       if (session == null) throw const AuthException('Kode berhasil diproses tetapi sesi belum tersedia. Silakan coba login.');
       pendingEmail = null;

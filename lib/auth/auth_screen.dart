@@ -45,8 +45,8 @@ class _AuthScreenState extends State<AuthScreen> {
     final auth = context.read<ZeiaAuthProvider>();
     FocusManager.instance.primaryFocus?.unfocus();
     final code = otp.text.trim();
-    if (code.length != 6 || int.tryParse(code) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Masukkan kode OTP 6 digit.')));
+    if (code.length < 6 || code.length > 8 || int.tryParse(code) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Masukkan kode verifikasi 6 sampai 8 digit.')));
       return;
     }
     final ok = await auth.verifySignupOtp(code);
@@ -102,6 +102,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     SizedBox(width: double.infinity, height: 56, child: FilledButton(onPressed: auth.loading ? null : submit, child: auth.loading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : Text(register ? 'Create account' : 'Sign in', style: const TextStyle(fontWeight: FontWeight.w900)))),
                     const SizedBox(height: 18),
                     Center(child: TextButton(onPressed: auth.loading ? null : () => setState(() => register = !register), child: Text(register ? 'Sudah punya akun? Sign in' : 'Belum punya akun? Create account'))),
+                    if (auth.error != null) const SizedBox(height: 12),
+                    if (auth.error != null) Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Color(0x22FF5252), borderRadius: BorderRadius.all(Radius.circular(12))), child: Text(auth.error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent, height: 1.35))),
                     if (!auth.configured) const Padding(padding: EdgeInsets.only(top: 24), child: Text('Supabase belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY sebelum login.', textAlign: TextAlign.center, style: TextStyle(color: Colors.orangeAccent))),
                   ]),
                 ),
@@ -130,7 +132,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 30),
                     const Text('Verify your email.', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: -1.2)),
                     const SizedBox(height: 10),
-                    Text('Masukkan kode 6 digit yang dikirim ke\n${auth.pendingEmail ?? ''}', textAlign: TextAlign.center, style: const TextStyle(color: zeiaMuted, fontSize: 15, height: 1.5)),
+                    Text('Masukkan kode verifikasi yang dikirim ke\n${auth.pendingEmail ?? ''}', textAlign: TextAlign.center, style: const TextStyle(color: zeiaMuted, fontSize: 15, height: 1.5)),
                     const SizedBox(height: 30),
                     TextField(
                       controller: otp,
@@ -138,15 +140,16 @@ class _AuthScreenState extends State<AuthScreen> {
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       textAlign: TextAlign.center,
-                      maxLength: 6,
+                      maxLength: 8,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 12),
                       onSubmitted: (_) => verifyOtp(),
-                      decoration: const InputDecoration(counterText: '', hintText: '000000', prefixIcon: Icon(Icons.verified_outlined)),
+                      decoration: const InputDecoration(counterText: '', hintText: '00000000', prefixIcon: Icon(Icons.verified_outlined)),
                     ),
                     const SizedBox(height: 22),
                     SizedBox(width: double.infinity, height: 56, child: FilledButton(onPressed: auth.loading ? null : verifyOtp, child: auth.loading ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Verify code', style: TextStyle(fontWeight: FontWeight.w900)))),
                     const SizedBox(height: 10),
+                    if (auth.error != null) Padding(padding: const EdgeInsets.only(top: 8), child: Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0x22FF5252), borderRadius: BorderRadius.circular(12)), child: Text(auth.error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent, height: 1.35)))),
                     TextButton(onPressed: auth.loading ? null : resendOtp, child: const Text('Kirim ulang kode')),
                     TextButton(onPressed: auth.loading ? null : () { otp.clear(); auth.cancelOtp(); }, child: const Text('Ganti email')),
                   ]),

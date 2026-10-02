@@ -4,7 +4,7 @@ ZEIA is a native Flutter music app for Android and iOS.
 
 ## Supabase
 
-The app now supports Supabase Auth with email and password, Postgres data, Storage for playlist covers, and Realtime synchronization. OTP is not used in this version.
+The app now supports Supabase Auth with email and password, Postgres data, Storage for playlist covers, and Realtime synchronization. Email verification uses Supabase Auth OTP. The app accepts 6 to 8 digit verification codes and verifies email signup codes with the current email OTP flow.
 
 Database features include profiles, playlists, playlist songs, liked songs, recently played, cross-device sync, and realtime playlist/library updates. Audio streaming remains external; Supabase stores song metadata and user relationships.
 
@@ -21,7 +21,7 @@ For local builds, pass:
 
 `flutter build apk --release --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY`
 
-Supabase email/password authentication follows Supabase Auth. If Confirm email is enabled, new accounts must confirm their email before a session is issued.
+Supabase email/password authentication follows Supabase Auth. If Confirm email is enabled, new accounts must confirm their email before a session is issued. For the Confirm signup template, include `{{ .Token }}` in the email body so Supabase sends the verification code. Current Supabase email template documentation describes the token as an 8-digit OTP.
 
 
 ## Social profile
@@ -43,7 +43,7 @@ The workflow sends one success message when both builds finish successfully. If 
 
 The Telegram bot must have an active chat with the owner first. Open the bot in Telegram and send `/start` once.
 
-Never commit the Telegram bot token to the repository or put it in Dart source code.
+Never commit the Telegram bot token to the repository or put it in Dart source code. Store it in GitHub Actions secrets as `TELEGRAM_BOT_TOKEN`.
 
 
 Build notification: GitHub Actions automatically sends Telegram success/error notifications to the configured owner. On failure, the complete combined build output is assembled as logs.txt and sent as a Telegram document.

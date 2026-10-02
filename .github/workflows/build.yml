@@ -17,8 +17,8 @@ concurrency:
 env:
   SUPABASE_URL: https://uiwtyazhrzsupkyuxxcg.supabase.co
   SUPABASE_PUBLISHABLE_KEY: sb_publishable_420QYxIgQNBzRlWbORXc9g_zb4q_X2X
-  TELEGRAM_BOT_TOKEN: 8653653771:AAEVFqaohF3jaZt-_gAnmm7cDOjowhFFQyw
-  TELEGRAM_CHAT_ID: 1450800056
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 jobs:
   android:
